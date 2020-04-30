@@ -33,7 +33,7 @@ Since we load images in BGR channels order, whereas TensorFlow models were train
 
 Although reshaped SSD Lite model is pretty accurate, occasionally fails still occur. To solve that issue the volatility threshold is used to account for short misdetections. Unfortunately, there are a couple of places where the sequence of failures is rather long, therefore it is recommended to decrease the probability threshold for detections to 0.3 or increase the volatility threshold to a value around 20.
 
-All command line parameters are described below.
+All supported command line arguments are described below.
 
 Parameter&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Meaning 
 ------------ | ------ 
@@ -48,6 +48,10 @@ Parameter&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp
 --crowd_alarm, -ca | [Optional] The number of people after which the warning message will be displayed. Default is 5.
 --duration_alarm, -da | [Optional] The duration of stay (in seconds) after which the warning message will be displayed. Default is 15.
 
+The script outputs processed frames, so they can be pipelined to FFMPEG server. Output frames are of the same size as original ones, hence it is important to specify correct input resolution in the `-video_size` parameter of the ffmpeg command. For example, the following command can be used to perform inference on the input video 768x432 pixels in size:
+```
+python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m models/ssdlite_mobilenet_v2_coco_custom_shape.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.3 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 2 -i - http://0.0.0.0:3004/fac.ffm
+```
 
 
 
