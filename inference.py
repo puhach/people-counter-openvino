@@ -88,3 +88,8 @@ class Network:
             raise Exception('Unsupported layers: ' +
                 ', '.join(unsupported_layers))
         
+        ### Load the model ###
+        self.exec_network = self.plugin.load_network(
+            network=self.network, device_name=device)
+        
+
