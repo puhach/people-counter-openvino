@@ -60,3 +60,19 @@ class Network:
         model_bin = os.path.splitext(model_xml)[0] + '.bin'        
         self.network = IENetwork(model=model_xml, weights=model_bin)
         
+        # Support topologies with 1 and 2 inputs
+        
+        self.image_tensor_blob = None
+        self.image_info_blob = None
+                
+        for input_key, input_val in self.network.inputs.items():
+            if len(input_val.shape) == 4: # image tensor
+                self.image_tensor_blob = input_key
+            elif len(input_val.shape) == 2: # image info
+                self.image_info_blob = input_key
+        
+        assert self.image_tensor_blob is not None, \
+            "Failed to find the input image specification"
+        
+        self.output_blob = next(iter(self.network.outputs))
+        
