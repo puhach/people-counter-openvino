@@ -76,3 +76,15 @@ class Network:
         
         self.output_blob = next(iter(self.network.outputs))
         
+        ### Check for unsupported layers ###        
+        
+        supported_layers = self.plugin.query_network(
+            network=self.network, device_name=device)
+        supported_layers = set(supported_layers.keys())
+        net_layers = set(self.network.layers.keys())
+        unsupported_layers = net_layers.difference(supported_layers)
+        
+        if unsupported_layers:
+            raise Exception('Unsupported layers: ' +
+                ', '.join(unsupported_layers))
+        
