@@ -96,7 +96,10 @@ def infer_on_stream(args, client):
         if not captured:            
             break
         
-        
+
+        ### Send the frame or image to the FFMPEG server ###
+        sys.stdout.buffer.write(next_frame)
+        sys.stdout.buffer.flush()        
         
     cap.release()
     cv2.destroyAllWindows()
