@@ -75,6 +75,13 @@ def infer_on_stream(args, client):
     cpu_ext = args.cpu_extension # CPU extension
     prob_threshold = args.prob_threshold # threshold for detections
     
+    ### Load the model through `infer_network` ###
+
+    infer_network = Network()
+    infer_network.load_model(model, device, cpu_ext)
+    net_input_shape = infer_network.get_input_shape()
+
+
     ### Handle the input stream ###
     
     if args.input is None or args.input.lower() == 'cam':
