@@ -99,3 +99,25 @@ class Network:
         ### Return the shape of the input layer ###        
         return self.network.inputs[self.image_tensor_blob].shape
 
+
+    def exec_net(self, batch):
+        ### Start an asynchronous request ###
+                
+        input_dict = { self.image_tensor_blob : batch }        
+        
+        # Faster RCNN additionally needs image info
+        if self.image_info_blob:
+            # Format value is Nx[H, W, S], where N is batch size, 
+            # H - original image height, W - original image width, 
+            # S - scale of original image (default 1).
+            # However, it seems like N can be omitted. In that
+            # case the value will be broadcast.
+            image_info = (batch.shape[2], batch.shape[3], 1)
+            input_dict[self.image_info_blob] = image_info            
+        
+        # Start inference asynchronously
+        request_handle = self.exec_network.start_async(
+            request_id = 0,
+            inputs=input_dict)
+                
+        return request_handle
