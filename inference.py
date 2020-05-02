@@ -93,3 +93,9 @@ class Network:
             network=self.network, device_name=device)
         
 
+
+
+    def get_input_shape(self):
+        ### Return the shape of the input layer ###        
+        return self.network.inputs[self.image_tensor_blob].shape
+
