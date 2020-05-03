@@ -50,6 +50,9 @@ def build_argparser():
                         help="MKLDNN (CPU)-targeted custom layers."
                              "Absolute path to a shared library with the"
                              "kernels impl.")
+    parser.add_argument("-cy", "--concurrency", type=int, default=4,
+                       help="Specifies the number of asynchronous "
+                            "infer requests to perform at the same time")
     parser.add_argument("-d", "--device", type=str, default="CPU",
                         help="Specify the target device to infer on: "
                              "CPU, GPU, FPGA or MYRIAD is acceptable. Sample "
