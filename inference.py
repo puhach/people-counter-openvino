@@ -121,3 +121,26 @@ class Network:
             inputs=input_dict)
                 
         return request_handle
+
+
+    def get_output(self, request, class_id, confidence):
+        
+        # Wait for the request to complete
+        infer_status = request.wait(-1)
+        
+        
+        ### Extract the output results
+        
+        out = request.outputs[self.output_blob]
+        
+        if infer_status != 0:
+            return False, None
+        
+        for detection in out[0,0,...]:
+            
+            if detection[1]==class_id and detection[2]>=confidence:
+                # x_min, y_min, x_max, y_max
+                box = detection[3:7]
+                return True, box
+
+        return False, None

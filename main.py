@@ -111,6 +111,12 @@ def infer_on_stream(args, client):
         frame_batch = resized_frame[None,...]        
         request = infer_network.exec_net(frame_batch)
 
+        detected, box = infer_network.get_output(
+            request=prev_request, 
+            class_id=1, 
+            confidence=prob_threshold)
+
+
         ### Send the frame or image to the FFMPEG server ###
         sys.stdout.buffer.write(next_frame)
         sys.stdout.buffer.flush()        
