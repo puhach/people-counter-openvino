@@ -104,6 +104,13 @@ def infer_on_stream(args, client):
             break
         
 
+        h = net_input_shape[2]
+        w = net_input_shape[3]            
+        resized_frame = cv2.resize(next_frame,(w, h))
+        resized_frame = resized_frame.transpose(2,0,1)
+        frame_batch = resized_frame[None,...]        
+        request = infer_network.exec_net(frame_batch)
+
         ### Send the frame or image to the FFMPEG server ###
         sys.stdout.buffer.write(next_frame)
         sys.stdout.buffer.flush()        
