@@ -116,9 +116,21 @@ def infer_on_stream(args, client):
             class_id=1, 
             confidence=prob_threshold)
 
+        if detected:
+            x_min = int(box[0]*next_frame.shape[1])
+            y_min = int(box[1]*next_frame.shape[0])
+            x_max = int(box[2]*next_frame.shape[1])
+            y_max = int(box[3]*next_frame.shape[0])
+            output_frame = cv2.rectangle(next_frame, 
+                                            (x_min,y_min),
+                                            (x_max,y_max), 
+                                            (0,255,0))
+            
+        else: # nothing detected or error
+            output_frame = prev_frame    
 
         ### Send the frame or image to the FFMPEG server ###
-        sys.stdout.buffer.write(next_frame)
+        sys.stdout.buffer.write(output_frame)
         sys.stdout.buffer.flush()        
         
     cap.release()
