@@ -30,8 +30,18 @@ import numpy as np
 from collections import deque
 
 import logging as log
+import paho.mqtt.client as mqtt
 
+from inference import Network
 from argparse import ArgumentParser
+
+
+# MQTT server environment variables
+HOSTNAME = socket.gethostname()
+IPADDRESS = socket.gethostbyname(HOSTNAME)
+MQTT_HOST = IPADDRESS
+MQTT_PORT = 3001
+MQTT_KEEPALIVE_INTERVAL = 60
 
 
 
