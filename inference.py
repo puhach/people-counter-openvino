@@ -45,7 +45,7 @@ class Network:
         self.request_id = 0
         self.request_count = 0
 
-    def load_model(self, model, concurrency, device, cpu_ext = None):
+    def load_model(self, model, batch_size, concurrency, device, cpu_ext = None):
                         
         # Initialize the Inference Engine
         self.plugin = IECore()
@@ -76,6 +76,23 @@ class Network:
         
         self.output_blob = next(iter(self.network.outputs))
         
+
+        # Works for SSD models, but for Faster RCNN it fails:
+        # RuntimeError: Failed to infer shapes for Reshape layer 
+        # (Reshape_Transpose_Class) with error: Invalid reshape mask 
+        # (dim attribute): number of elements in input: [7,2,12,1444] 
+        # and output: [1,24,38,38] mismatch
+        ## This will reshape the network, so it can take 
+        ## several frames in a batch and also the output
+        ## tensor will be (1,1,N*100,7) instead of (N,1,100,7).
+        #input_shape = self.network.inputs[self.image_tensor_blob].shape        
+        #input_shape[0] = batch_size        
+        #self.network.reshape({self.image_tensor_blob: input_shape})
+        
+        # Set the network batch size
+        self.network.batch_size = batch_size
+
+
         ### Check for unsupported layers ###        
         
         supported_layers = self.plugin.query_network(
@@ -141,19 +158,37 @@ class Network:
         # Wait for the request to complete
         infer_status = request.wait(-1)
         
+        self.request_count -= 1
+        assert self.request_count >= 0, "Request count is negative!"
         
-        ### Extract the output results
+        
+        ### Extract and return the output results
         
         out = request.outputs[self.output_blob]
+        n = request.inputs[self.image_tensor_blob].shape[0]
+        detections = np.full(shape=(n), fill_value=False, dtype=bool)
+        boxes = np.zeros(shape=(n,4))
         
         if infer_status != 0:
-            return False, None
+            return detections, boxes
         
-        for detection in out[0,0,...]:
-            
-            if detection[1]==class_id and detection[2]>=confidence:
-                # x_min, y_min, x_max, y_max
-                box = detection[3:7]
-                return True, box
+        # In case the network was reshaped, 
+        # out.shape[0] may be not the same as n
+        for i in range(out.shape[0]):
+            for detection in out[i,0,...]:
+                
+                batch_index = int(detection[0])
+                if batch_index < 0: # nothing detected
+                    break
 
-        return False, None
+                # Check if we already have a detection for this frame
+                if detections[batch_index]:
+                    continue
+
+                if detection[1]==class_id and detection[2]>=confidence:
+                    detections[batch_index] = True
+                    # x_min, y_min, x_max, y_max
+                    boxes[batch_index] = detection[3:7]
+                    #break
+
+        return detections, boxes

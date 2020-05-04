@@ -27,6 +27,7 @@ import socket
 import json
 import cv2
 import numpy as np
+from collections import deque
 
 import logging as log
 
@@ -89,7 +90,7 @@ def infer_on_stream(args, client):
     ### Load the model through `infer_network` ###
 
     infer_network = Network()
-    infer_network.load_model(model, concurrency, device, cpu_ext)
+    infer_network.load_model(model, batch_size, concurrency, device, cpu_ext)
     net_input_shape = infer_network.get_input_shape()
 
 
@@ -103,6 +104,8 @@ def infer_on_stream(args, client):
     cap = cv2.VideoCapture(input)
     assert cap.isOpened(), "Failed to open the input"
     
+    frames = [] # frames to batch
+    q = deque() # infer request queue
     
     ### Loop until stream is over ###    
     while cap.isOpened():
@@ -111,36 +114,57 @@ def infer_on_stream(args, client):
         
         captured, next_frame = cap.read()
         
-        if captured:       
+        if captured:            
+            frames.append(next_frame)
+        
+        
+        ### Pre-process the image as needed ###        
+                
+        if len(frames)>=batch_size or not captured and frames:
             h = net_input_shape[2]
             w = net_input_shape[3]            
-            resized_frame = cv2.resize(next_frame,(w, h))
-            resized_frame = resized_frame.transpose(2,0,1)
-            frame_batch = resized_frame[None,...]        
+            resized_frames = [cv2.resize(f,(w, h))
+                              .transpose(2,0,1)[None,...] 
+                              for f in frames]
+            frame_batch = np.concatenate(resized_frames, axis=0)
             request = infer_network.exec_net(frame_batch)
-            q.append((request, next_frame))
+            q.append((request, frames))
+            frames = []
 
-        if len(q) >= concurrency or not captured:
+
+        ### Start asynchronous inference for specified request ###
+                
+        # If the number of concurrent requests hit the limit,
+        # we have to wait. Also if the end of the stream has 
+        # been reached, process what we have in the queue.
+        if len(q) >= concurrency or not captured: 
             if not q:
                 break
 
-            detected, box = infer_network.get_output(
+            prev_request, prev_frames = q.popleft()
+
+            ### Wait for the result ###        
+            ### Get the results of the inference request ###
+            
+            detected, boxes = infer_network.get_output(
                 request=prev_request, 
                 class_id=1, 
                 confidence=prob_threshold)
 
-            if detected:
-                x_min = int(box[0]*next_frame.shape[1])
-                y_min = int(box[1]*next_frame.shape[0])
-                x_max = int(box[2]*next_frame.shape[1])
-                y_max = int(box[3]*next_frame.shape[0])
-                output_frame = cv2.rectangle(next_frame, 
-                                                (x_min,y_min),
-                                                (x_max,y_max), 
-                                                (0,255,0))
-                
-            else: # nothing detected or error
-                output_frame = prev_frame    
+            for i,prev_frame in enumerate(prev_frames):           
+                if detected[i]:
+                    box = boxes[i]
+                    x_min = int(box[0]*prev_frame.shape[1])
+                    y_min = int(box[1]*prev_frame.shape[0])
+                    x_max = int(box[2]*prev_frame.shape[1])
+                    y_max = int(box[3]*prev_frame.shape[0])
+                    output_frame = cv2.rectangle(prev_frame, 
+                                                 (x_min,y_min),
+                                                 (x_max,y_max), 
+                                                 (0,255,0))
+                    
+                else: # nothing detected or error
+                    output_frame = prev_frame
 
             ### Send the frame or image to the FFMPEG server ###
             sys.stdout.buffer.write(output_frame)
