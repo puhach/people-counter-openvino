@@ -45,7 +45,7 @@ class Network:
         self.request_id = 0
         self.request_count = 0
 
-    def load_model(self, model, device, cpu_ext = None):
+    def load_model(self, model, concurrency, device, cpu_ext = None):
                         
         # Initialize the Inference Engine
         self.plugin = IECore()
@@ -92,6 +92,12 @@ class Network:
         self.exec_network = self.plugin.load_network(
             network=self.network, device_name=device)
         
+        
+        # Initialize member variables
+        self.request_id = 0
+        self.request_count = 0
+        self.concurrency = concurrency
+        
 
 
 
@@ -117,9 +123,16 @@ class Network:
         
         # Start inference asynchronously
         request_handle = self.exec_network.start_async(
-            request_id = 0,
+            request_id = self.request_id,
             inputs=input_dict)
                 
+                
+        # Next request will be the least recently used one
+        self.request_id = (self.request_id + 1) % self.concurrency
+        
+        # Maintain total request count
+        self.request_count += 1
+
         return request_handle
 
 

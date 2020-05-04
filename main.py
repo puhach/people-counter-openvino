@@ -50,11 +50,15 @@ def build_argparser():
                         help="MKLDNN (CPU)-targeted custom layers."
                              "Absolute path to a shared library with the"
                              "kernels impl.")
+
     parser.add_argument("-cy", "--concurrency", type=int, default=4,
                        help="Specifies the number of asynchronous "
                             "infer requests to perform at the same time")
+
     parser.add_argument("-b", "--batch", type=int, default=1,
-                       help="Defines the frame batch size")                            
+                       help="Defines the frame batch size")
+
+
     parser.add_argument("-d", "--device", type=str, default="CPU",
                         help="Specify the target device to infer on: "
                              "CPU, GPU, FPGA or MYRIAD is acceptable. Sample "
@@ -79,11 +83,13 @@ def infer_on_stream(args, client):
     device = args.device # device name to perform inference on    
     cpu_ext = args.cpu_extension # CPU extension
     prob_threshold = args.prob_threshold # threshold for detections
+    concurrency = args.concurrency # number of concurrent infer requests
+    batch_size = args.batch # set the batch size    
     
     ### Load the model through `infer_network` ###
 
     infer_network = Network()
-    infer_network.load_model(model, device, cpu_ext)
+    infer_network.load_model(model, concurrency, device, cpu_ext)
     net_input_shape = infer_network.get_input_shape()
 
 
@@ -105,38 +111,40 @@ def infer_on_stream(args, client):
         
         captured, next_frame = cap.read()
         
-        if not captured:            
-            break
-        
+        if captured:       
+            h = net_input_shape[2]
+            w = net_input_shape[3]            
+            resized_frame = cv2.resize(next_frame,(w, h))
+            resized_frame = resized_frame.transpose(2,0,1)
+            frame_batch = resized_frame[None,...]        
+            request = infer_network.exec_net(frame_batch)
+            q.append((request, next_frame))
 
-        h = net_input_shape[2]
-        w = net_input_shape[3]            
-        resized_frame = cv2.resize(next_frame,(w, h))
-        resized_frame = resized_frame.transpose(2,0,1)
-        frame_batch = resized_frame[None,...]        
-        request = infer_network.exec_net(frame_batch)
+        if len(q) >= concurrency or not captured:
+            if not q:
+                break
 
-        detected, box = infer_network.get_output(
-            request=prev_request, 
-            class_id=1, 
-            confidence=prob_threshold)
+            detected, box = infer_network.get_output(
+                request=prev_request, 
+                class_id=1, 
+                confidence=prob_threshold)
 
-        if detected:
-            x_min = int(box[0]*next_frame.shape[1])
-            y_min = int(box[1]*next_frame.shape[0])
-            x_max = int(box[2]*next_frame.shape[1])
-            y_max = int(box[3]*next_frame.shape[0])
-            output_frame = cv2.rectangle(next_frame, 
-                                            (x_min,y_min),
-                                            (x_max,y_max), 
-                                            (0,255,0))
-            
-        else: # nothing detected or error
-            output_frame = prev_frame    
+            if detected:
+                x_min = int(box[0]*next_frame.shape[1])
+                y_min = int(box[1]*next_frame.shape[0])
+                x_max = int(box[2]*next_frame.shape[1])
+                y_max = int(box[3]*next_frame.shape[0])
+                output_frame = cv2.rectangle(next_frame, 
+                                                (x_min,y_min),
+                                                (x_max,y_max), 
+                                                (0,255,0))
+                
+            else: # nothing detected or error
+                output_frame = prev_frame    
 
-        ### Send the frame or image to the FFMPEG server ###
-        sys.stdout.buffer.write(output_frame)
-        sys.stdout.buffer.flush()        
+            ### Send the frame or image to the FFMPEG server ###
+            sys.stdout.buffer.write(output_frame)
+            sys.stdout.buffer.flush()        
         
     cap.release()
     cv2.destroyAllWindows()
