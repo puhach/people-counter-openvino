@@ -51,6 +51,14 @@ def build_argparser():
                         help="Probability threshold for detections filtering"
                         "(0.3 by default)")
 
+    parser.add_argument("-vt", "--volatility", type=int, default=10,
+                       help="The maximal number of frames "
+                           "allowed to have a detection value "
+                           "different from the last stable one. "
+                           "Exceeding this limit results in "
+                           "their detection to be considered "
+                           "a new stable value.")
+
     parser.add_argument("-b", "--batch", type=int, default=1,
                        help="Defines the frame batch size")
 
@@ -90,6 +98,7 @@ def infer_on_stream(args, client):
     device = args.device # device name to perform inference on    
     cpu_ext = args.cpu_extension # CPU extension
     prob_threshold = args.prob_threshold # threshold for detections
+    volatility = args.volatility # volatility threshold        
     concurrency = args.concurrency # number of concurrent infer requests
     batch_size = args.batch # set the batch size    
     
