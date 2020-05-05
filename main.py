@@ -92,6 +92,12 @@ def build_argparser():
     return parser
 
 
+def connect_mqtt():    
+    client = mqtt.Client()
+    client.connect(MQTT_HOST, MQTT_PORT, MQTT_KEEPALIVE_INTERVAL)
+    client.loop_start()
+    return client
+
 
 def infer_on_stream(args, client):
     """
@@ -207,6 +213,9 @@ def main():
 
     # Grab command line args
     args = build_argparser().parse_args()
+
+    # Connect to the MQTT server
+    client = connect_mqtt()
 
     # Perform inference on the input stream
     infer_on_stream(args, client)
