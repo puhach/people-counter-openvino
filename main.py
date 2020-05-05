@@ -205,6 +205,7 @@ def infer_on_stream(args, client):
     cv2.destroyAllWindows()
 
 
+
 def main():
     """
     Load the network and parse the output.
@@ -219,6 +220,10 @@ def main():
 
     # Perform inference on the input stream
     infer_on_stream(args, client)
+
+    # Disconnect from the MQTT server
+    client.loop_stop()
+    client.disconnect()
 
 
 if __name__ == '__main__':
