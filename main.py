@@ -135,6 +135,14 @@ def infer_on_stream(args, client):
     cap = cv2.VideoCapture(input)
     assert cap.isOpened(), "Failed to open the input"
     
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    total_people_count = 0
+    last_stable_people_count = 0
+    mismatch_count = 0 # deviation from the last stable detection
+    total_duration = 0 # total duration in frames
+
     frames = [] # frames to batch
     q = deque() # infer request queue
     
