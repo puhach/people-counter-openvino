@@ -221,13 +221,30 @@ def infer_on_stream(args, client):
                         total_duration += 1
                     else: # person left
                         
-                        print('Avg. duration:', total_duration / total_people_count / fps )
+                        # Send average duration to the server
+                        # (average duration is calculated in  
+                        # terms of the original video and doesn't
+                        # depend on inference time or network delays)
+                        ### Topic "person/duration": key of "duration" ###
                         
+                        avg_duration_payload = json.dumps({'duration' 
+                            : total_duration / total_people_count / fps })
+                        
+                        client.publish(
+                            topic='person/duration',
+                            payload=avg_duration_payload)
 
-                    print('Current people count:', last_stable_people_count)
-                    print('Total people count:', total_people_count)
-
+                    # Send new people count to the server
+                    ### Topic "person": keys of "count" and "total" ###
                     
+                    people_count_payload = json.dumps(
+                        {
+                            'count' : last_stable_people_count,
+                            'total' : total_people_count
+                        })
+                    
+                    client.publish(topic='person',
+                        payload=people_count_payload)
                     
                 else: # Last stable count remains the same
                     if last_stable_people_count > 0:
