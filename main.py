@@ -197,6 +197,43 @@ def infer_on_stream(args, client):
                 else: # nothing detected or error
                     output_frame = prev_frame
 
+                ### Extract stats from the results ###
+                    
+                cur_people_count = int(detected[i])
+                if last_stable_people_count != cur_people_count:
+                    mismatch_count += 1
+                else:
+                    mismatch_count = 0
+                
+                
+                # Check if we have a new stable value
+                if mismatch_count>volatility or frame_count<=1:
+                    
+                    ### Calculate and send relevant information ###
+                    ### on current_count, total_count and duration ### 
+                    ### to the MQTT server ###
+
+                    last_stable_people_count = cur_people_count
+                    total_people_count += last_stable_people_count
+                    mismatch_count = 0
+                    
+                    if last_stable_people_count > 0: # person entered
+                        total_duration += 1
+                    else: # person left
+                        
+                        print('Avg. duration:', total_duration / total_people_count / fps )
+                        
+
+                    print('Current people count:', last_stable_people_count)
+                    print('Total people count:', total_people_count)
+
+                    
+                    
+                else: # Last stable count remains the same
+                    if last_stable_people_count > 0:
+                        total_duration += 1
+
+
             ### Send the frame or image to the FFMPEG server ###
             sys.stdout.buffer.write(output_frame)
             sys.stdout.buffer.flush()        
