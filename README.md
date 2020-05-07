@@ -1,5 +1,7 @@
 # People Counter App at the Edge
 
+![people-counter-python](./images/people-counter-image.png)
+
 Detect people in a designated area, providing the number of people and average duration they spend in a frame.
 
 
