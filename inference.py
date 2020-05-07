@@ -45,10 +45,13 @@ class Network:
         self.request_id = 0
         self.request_count = 0
 
-    def load_model(self, model, batch_size, concurrency, device, cpu_ext = None):
+    def load_model(self, model, batch_size, concurrency, 
+                   device, cpu_ext = None):
                         
         # Initialize the Inference Engine
         self.plugin = IECore()
+        #self.plugin.set_config({'CPU_THREADS_NUM': '8'}, "CPU")
+        #self.plugin.set_config({'DYN_BATCH_ENABLED': 'YES'}, "CPU")
         #print(self.plugin.available_devices)
         
         ### Add any necessary extensions ###
@@ -76,7 +79,6 @@ class Network:
         
         self.output_blob = next(iter(self.network.outputs))
         
-
         # Works for SSD models, but for Faster RCNN it fails:
         # RuntimeError: Failed to infer shapes for Reshape layer 
         # (Reshape_Transpose_Class) with error: Invalid reshape mask 
@@ -91,8 +93,7 @@ class Network:
         
         # Set the network batch size
         self.network.batch_size = batch_size
-
-
+        
         ### Check for unsupported layers ###        
         
         supported_layers = self.plugin.query_network(
@@ -105,10 +106,11 @@ class Network:
             raise Exception('Unsupported layers: ' +
                 ', '.join(unsupported_layers))
         
+        
         ### Load the model ###
         self.exec_network = self.plugin.load_network(
-            network=self.network, device_name=device)
-        
+            network=self.network, device_name=device, 
+            num_requests=concurrency)
         
         # Initialize member variables
         self.request_id = 0
@@ -116,15 +118,11 @@ class Network:
         self.concurrency = concurrency
         
 
-
-
     def get_input_shape(self):
         ### Return the shape of the input layer ###        
         return self.network.inputs[self.image_tensor_blob].shape
 
-
     def exec_net(self, batch):
-        ### Start an asynchronous request ###
                 
         input_dict = { self.image_tensor_blob : batch }        
         
@@ -143,13 +141,12 @@ class Network:
             request_id = self.request_id,
             inputs=input_dict)
                 
-                
         # Next request will be the least recently used one
         self.request_id = (self.request_id + 1) % self.concurrency
         
         # Maintain total request count
         self.request_count += 1
-
+        
         return request_handle
 
 
