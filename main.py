@@ -32,9 +32,8 @@ from collections import deque
 import logging as log
 import paho.mqtt.client as mqtt
 
-from inference import Network
 from argparse import ArgumentParser
-
+from inference import Network
 
 # MQTT server environment variables
 HOSTNAME = socket.gethostname()
@@ -42,7 +41,6 @@ IPADDRESS = socket.gethostbyname(HOSTNAME)
 MQTT_HOST = IPADDRESS
 MQTT_PORT = 3001
 MQTT_KEEPALIVE_INTERVAL = 60
-
 
 
 def build_argparser():
@@ -56,43 +54,41 @@ def build_argparser():
                         help="Path to an xml file with a trained model.")
     parser.add_argument("-i", "--input", required=True, type=str,
                         help="Path to image or video file")
-
-    parser.add_argument("-pt", "--prob_threshold", type=float, default=0.5,
-                        help="Probability threshold for detections filtering"
-                        "(0.3 by default)")
-
-    parser.add_argument("-vt", "--volatility", type=int, default=10,
-                       help="The maximal number of frames "
-                           "allowed to have a detection value "
-                           "different from the last stable one. "
-                           "Exceeding this limit results in "
-                           "their detection to be considered "
-                           "a new stable value.")
-
-    parser.add_argument("-b", "--batch", type=int, default=1,
-                       help="Defines the frame batch size")
-
-    parser.add_argument("-cy", "--concurrency", type=int, default=4,
-                       help="Specifies the number of asynchronous "
-                            "infer requests to perform at the same time")
-
+    parser.add_argument("-l", "--cpu_extension", required=False, type=str,
+                        default=None,
+                        help="MKLDNN (CPU)-targeted custom layers."
+                             "Absolute path to a shared library with the"
+                             "kernels impl.")
     parser.add_argument("-d", "--device", type=str, default="CPU",
                         help="Specify the target device to infer on: "
                              "CPU, GPU, FPGA or MYRIAD is acceptable. Sample "
                              "will look for a suitable plugin for device "
                              "specified (CPU by default)")
 
-    parser.add_argument("-l", "--cpu_extension", required=False, type=str,
-                        default=None,
-                        help="MKLDNN (CPU)-targeted custom layers."
-                             "Absolute path to a shared library with the"
-                             "kernels impl.")
-
-
+    parser.add_argument("-da", "--duration_alarm", 
+                        type=float, default=15,
+                       help="The duration of stay after which "
+                            "the warning message will be displayed.")
+    parser.add_argument("-cy", "--concurrency", type=int, default=4,
+                       help="Specifies the number of asynchronous "
+                            "infer requests to perform at the same time")
+    parser.add_argument("-b", "--batch", type=int, default=1,
+                       help="Defines the frame batch size")
+    parser.add_argument("-vt", "--volatility", type=int, default=10,
+                       help="The maximal number of consecutive frames "
+                           "allowed to have a detection value "
+                           "different from the last stable one. "
+                           "Exceeding this limit results in "
+                           "their detection to be considered "
+                           "a new stable value.")
+    parser.add_argument("-pt", "--prob_threshold", type=float, default=0.3,
+                        help="Probability threshold for detections filtering"
+                        "(0.3 by default)")
     return parser
 
 
-def connect_mqtt():    
+def connect_mqtt():
+    ### Connect to the MQTT server ###
     client = mqtt.Client()
     client.connect(MQTT_HOST, MQTT_PORT, MQTT_KEEPALIVE_INTERVAL)
     client.loop_start()
@@ -111,20 +107,23 @@ def infer_on_stream(args, client):
     # Read command line arguments
     
     model = args.model  # path to the model IR       
+    batch_size = args.batch # set the batch size    
     device = args.device # device name to perform inference on    
     cpu_ext = args.cpu_extension # CPU extension
-    prob_threshold = args.prob_threshold # threshold for detections
-    volatility = args.volatility # volatility threshold        
     concurrency = args.concurrency # number of concurrent infer requests
-    batch_size = args.batch # set the batch size    
+    volatility = args.volatility # volatility threshold    
+    prob_threshold = args.prob_threshold # threshold for detections
+    duration_alarm_threshold = args.duration_alarm # longest stay allowed
+    crowd_alarm_threshold = args.crowd_alarm # max people allowed
     
     ### Load the model through `infer_network` ###
 
     infer_network = Network()
-    infer_network.load_model(model, batch_size, concurrency, device, cpu_ext)
+    infer_network.load_model(model, batch_size, 
+                             concurrency, 
+                             device, cpu_ext)
     net_input_shape = infer_network.get_input_shape()
-
-
+    
     ### Handle the input stream ###
     
     if args.input is None or args.input.lower() == 'cam':
@@ -132,6 +131,7 @@ def infer_on_stream(args, client):
     else:
         input = args.input
 
+    # VideoCapture supports images too
     cap = cv2.VideoCapture(input)
     assert cap.isOpened(), "Failed to open the input"
     
@@ -142,7 +142,8 @@ def infer_on_stream(args, client):
     last_stable_people_count = 0
     mismatch_count = 0 # deviation from the last stable detection
     total_duration = 0 # total duration in frames
-
+    current_duration = 0 # current person's stay duration in frames
+    
     frames = [] # frames to batch
     q = deque() # infer request queue
     
@@ -190,21 +191,8 @@ def infer_on_stream(args, client):
                 class_id=1, 
                 confidence=prob_threshold)
 
-            for i,prev_frame in enumerate(prev_frames):           
-                if detected[i]:
-                    box = boxes[i]
-                    x_min = int(box[0]*prev_frame.shape[1])
-                    y_min = int(box[1]*prev_frame.shape[0])
-                    x_max = int(box[2]*prev_frame.shape[1])
-                    y_max = int(box[3]*prev_frame.shape[0])
-                    output_frame = cv2.rectangle(prev_frame, 
-                                                 (x_min,y_min),
-                                                 (x_max,y_max), 
-                                                 (0,255,0))
-                    
-                else: # nothing detected or error
-                    output_frame = prev_frame
-
+            
+            for i,prev_frame in enumerate(prev_frames):                       
                 ### Extract stats from the results ###
                     
                 cur_people_count = int(detected[i])
@@ -226,8 +214,10 @@ def infer_on_stream(args, client):
                     mismatch_count = 0
                     
                     if last_stable_people_count > 0: # person entered
-                        total_duration += 1
+                        current_duration = 1
+                        total_duration += 1                        
                     else: # person left
+                        current_duration = 0
                         
                         # Send average duration to the server
                         # (average duration is calculated in  
@@ -256,30 +246,59 @@ def infer_on_stream(args, client):
                     
                 else: # Last stable count remains the same
                     if last_stable_people_count > 0:
+                        current_duration += 1
                         total_duration += 1
+            
+            
+                # Prepare the output frame
+                        
+                if detected[i]:
+                    box = boxes[i]
+                    x_min = int(box[0]*prev_frame.shape[1])
+                    y_min = int(box[1]*prev_frame.shape[0])
+                    x_max = int(box[2]*prev_frame.shape[1])
+                    y_max = int(box[3]*prev_frame.shape[0])
+                    output_frame = cv2.rectangle(prev_frame, 
+                                                 (x_min,y_min),
+                                                 (x_max,y_max), 
+                                                 (0,255,0))
+                    
+                else: # nothing detected or error
+                    output_frame = prev_frame
 
-
-            ### Send the frame or image to the FFMPEG server ###
-            sys.stdout.buffer.write(output_frame)
-            sys.stdout.buffer.flush()        
+                    
+                # Alarms 
+                
+                if duration_alarm_threshold >= 0 \
+                    and current_duration/fps > duration_alarm_threshold:
+                        cv2.putText(output_frame, 
+                                    text="Chop-chop! "
+                                    "Don't stay for too long. "
+                                    "Life is short!",
+                                    org=(20,output_frame.shape[0]-60),
+                                    fontFace=cv2.FONT_HERSHEY_DUPLEX,
+                                    fontScale=0.9,
+                                    color=(100,250,250),
+                                    thickness=2)
+                        
+                ### Send the frame to the FFMPEG server ###
+                ### Write an output image if `single_image_mode` ###
+                sys.stdout.buffer.write(output_frame)
+                sys.stdout.buffer.flush()
         
     cap.release()
     cv2.destroyAllWindows()
 
-
-
 def main():
     """
     Load the network and parse the output.
-
     """
-
     # Grab command line args
     args = build_argparser().parse_args()
-
+    
     # Connect to the MQTT server
     client = connect_mqtt()
-
+    
     # Perform inference on the input stream
     infer_on_stream(args, client)
 
