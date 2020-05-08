@@ -64,7 +64,9 @@ def build_argparser():
                              "CPU, GPU, FPGA or MYRIAD is acceptable. Sample "
                              "will look for a suitable plugin for device "
                              "specified (CPU by default)")
-
+    parser.add_argument("-ca", "--crowd_alarm", type=int, default=5,
+                       help="The number of people after which "
+                            "the warning message will be displayed.")
     parser.add_argument("-da", "--duration_alarm", 
                         type=float, default=15,
                        help="The duration of stay after which "
@@ -280,6 +282,17 @@ def infer_on_stream(args, client):
                                     fontScale=0.9,
                                     color=(100,250,250),
                                     thickness=2)
+                    
+                if crowd_alarm_threshold >= 0 \
+                    and total_people_count > crowd_alarm_threshold:
+                        cv2.putText(output_frame, 
+                                text="Too many people. "
+                                "Beware COVID-19!",
+                                org=(20,output_frame.shape[0]-20),
+                                fontFace=cv2.FONT_HERSHEY_TRIPLEX,
+                                fontScale=1,
+                                color=(0,0,255),
+                                thickness=2)    
                         
                 ### Send the frame to the FFMPEG server ###
                 ### Write an output image if `single_image_mode` ###
