@@ -11,6 +11,16 @@ The counter exploits the Inference Engine included in the Intel Distribution of 
 
 ![architectural diagram](./images/arch_diagram.png)
 
+
+## Requirements
+
+### Hardware
+
+* 6th to 10th generation Intel Core processor with Iris Pro graphics or Intel HD Graphics.
+* Or Intel Neural Compute Stick 2 (NCS2)
+
+
+
 ## Choosing a Model
 
 It would probably be enough to use a classification model for this task since we need just to count people and only one person can appear in a frame at the same time. However, bounding boxes could be a useful indicator of application correctness, therefore I decided to use a detection model. 
