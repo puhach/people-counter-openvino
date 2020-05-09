@@ -9,6 +9,8 @@ Detect people in a designated area, providing the number of people and average d
 
 The counter exploits the Inference Engine included in the Intel Distribution of OpenVINO Toolkit. The Inference Engine identifies people in a video frame by means of an object detection model. Assuming that several people can't be present in the same frame, the app looks if there is a person and increments the total count. When that person leaves, it measures the duration they spent in the frame (time elapsed between entering and exiting a frame) and calculates the average duration. It then sends the data to a local web server using the Paho MQTT Python package.
 
+![architectural diagram](./images/arch_diagram.png)
+
 ## Choosing a Model
 
 It would probably be enough to use a classification model for this task since we need just to count people and only one person can appear in a frame at the same time. However, bounding boxes could be a useful indicator of application correctness, therefore I decided to use a detection model. 
