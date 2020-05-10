@@ -25,6 +25,7 @@ The counter exploits the Inference Engine included in the Intel Distribution of 
 *   Node v6.17.1
 *   Npm v3.10.10
 *   CMake
+*   FFmpeg
 *   MQTT Mosca server
   
 
@@ -38,6 +39,7 @@ The counter exploits the Inference Engine included in the Intel Distribution of 
 
 * Install Intel Distribution of OpenVINO toolkit
 * Install Node.js and its dependencies
+* Install FFmpeg
 * Install MQTT/Mosca Sever
 
     From the main directory run:
