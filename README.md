@@ -36,6 +36,31 @@ The counter exploits the Inference Engine included in the Intel Distribution of 
     - [Mac](./setup/mac-setup.md)
     - [Windows](./setup/windows-setup.md)
 
+* Install Intel Distribution of OpenVINO toolkit
+* Install Node.js and its dependencies
+* Install MQTT/Mosca Sever
+
+    From the main directory run:
+    ```
+    cd webservice/server
+    npm install
+    ```
+
+* Install the Web Server
+
+    From the main directory run:
+    ```
+    cd ../ui
+    npm install
+    ```
+    **Note:** If any configuration errors occur in mosca server or Web server while using **npm install**, use the below commands:
+    ```
+    sudo npm install npm -g 
+    rm -rf node_modules
+    npm cache clean
+    npm config set registry "http://registry.npmjs.org"
+    npm install
+    ```
 
 
 ## Choosing a Model
