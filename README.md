@@ -30,13 +30,12 @@ The counter exploits the Inference Engine included in the Intel Distribution of 
 
 ## Setup
 
-### Install Intel Distribution of OpenVINO toolkit
+* Initial setup instructions are platform-specific. Please, refer to the relevant guidelines for your operating system:
 
-Installation instructions are platform-specific. Please, refer to the relevant guidelines for your operating system:
+    - [Linux/Ubuntu](./setup/linux-setup.md)
+    - [Mac](./setup/mac-setup.md)
+    - [Windows](./setup/windows-setup.md)
 
-- [Linux/Ubuntu](./setup/linux-setup.md)
-- [Mac](./setup/mac-setup.md)
-- [Windows](./setup/windows-setup.md)
 
 
 ## Choosing a Model
