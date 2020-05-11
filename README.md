@@ -21,6 +21,7 @@ The counter exploits the Inference Engine included in the Intel Distribution of 
 
 ### Software
 
+*   Python 3.5
 *   Intel Distribution of OpenVINO toolkit 2019 R3 release
 *   Node v6.17.1
 *   Npm v3.10.10
@@ -90,6 +91,8 @@ Since we load images in BGR channels order, whereas TensorFlow models were train
 ```
 /opt/intel/openvino/deployment_tools/model_optimizer/mo_tf.py --model_name ssdlite_mobilenet_v2_coco_custom_shape --input_model  ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb --tensorflow_use_custom_operations_config /opt/intel/openvino/deployment_tools/model_optimizer/extensions/front/tf/ssd_v2_support.json --tensorflow_object_detection_api_pipeline_config ssdlite_mobilenet_v2_coco_2018_05_09/pipeline.config --reverse_input_channels --input_shape [1,400,400,3]
 ```
+
+
 
 ## Usage
 
