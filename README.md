@@ -92,6 +92,58 @@ Since we load images in BGR channels order, whereas TensorFlow models were train
 /opt/intel/openvino/deployment_tools/model_optimizer/mo_tf.py --model_name ssdlite_mobilenet_v2_coco_custom_shape --input_model  ssdlite_mobilenet_v2_coco_2018_05_09/frozen_inference_graph.pb --tensorflow_use_custom_operations_config /opt/intel/openvino/deployment_tools/model_optimizer/extensions/front/tf/ssd_v2_support.json --tensorflow_object_detection_api_pipeline_config ssdlite_mobilenet_v2_coco_2018_05_09/pipeline.config --reverse_input_channels --input_shape [1,400,400,3]
 ```
 
+## Launch
+
+There are three components that need to be running in separate terminals for this application to work:
+
+-   MQTT Mosca server 
+-   Node.js* Web server
+-   FFmpeg server
+
+### Start the Mosca server
+
+From the main directory:
+
+```
+cd webservice/server/node-server
+node ./server.js
+```
+
+You should see the following message, if successful:
+```
+Mosca server started.
+```
+
+### Start the GUI
+
+Open a new terminal and run the below commands.
+```
+cd webservice/ui
+npm run dev
+```
+
+You should see the following message in the terminal.
+```
+webpack: Compiled successfully
+```
+
+### Start the FFmpeg Server
+
+Open a new terminal and the commands below.
+```
+sudo ffserver -f ./ffmpeg/server.conf
+```
+
+
+### Configure the environment
+
+Before running the code the environment must be configured to use the Intel Distribution of OpenVINO toolkit one time per session by executing the following command:
+```
+source /opt/intel/openvino/bin/setupvars.sh -pyver 3.5
+```
+
+You should also be able to run the application with Python 3.6, although newer versions of Python will not work with the app.
+
 
 
 ## Usage
