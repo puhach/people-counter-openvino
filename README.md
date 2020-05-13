@@ -189,4 +189,18 @@ To see the output on a web based interface, open the link [http://0.0.0.0:3002](
 
 
 
+#### Running on the Intel Neural Compute Stick
+
+To run on the Intel Neural Compute Stick, use the ```-d MYRIAD``` command-line argument:
+
+```
+python main.py -d MYRIAD -i resources/Pedestrian_Detect_2_1_1.mp4 -m path-to-model.xml -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3002/fac.ffm
+```
+
+To see the output on a web based interface, open the link [http://0.0.0.0:3002](http://0.0.0.0:3002/) in a browser.
+
+**Note:** The Intel Neural Compute Stick can only run FP16 models at this time. The model that is passed to the application, through the `-m <path_to_model>` command-line argument, must be of data type FP16.
+
+
+
 
