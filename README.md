@@ -43,7 +43,7 @@ The counter exploits the Inference Engine included in the Intel Distribution of 
 * Install FFmpeg
 * Install MQTT/Mosca Sever
 
-    From the main directory run:
+    From the setup directory run:
     ```
     cd webservice/server
     npm install
@@ -51,7 +51,7 @@ The counter exploits the Inference Engine included in the Intel Distribution of 
 
 * Install the Web Server
 
-    From the main directory run:
+    From the current directory run:
     ```
     cd ../ui
     npm install
@@ -102,7 +102,7 @@ There are three components that need to be running in separate terminals for thi
 
 ### Start the Mosca server
 
-From the main directory:
+From the setup directory:
 
 ```
 cd webservice/server/node-server
