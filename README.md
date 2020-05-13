@@ -202,5 +202,13 @@ To see the output on a web based interface, open the link [http://0.0.0.0:3002](
 **Note:** The Intel Neural Compute Stick can only run FP16 models at this time. The model that is passed to the application, through the `-m <path_to_model>` command-line argument, must be of data type FP16.
 
 
+#### Using a camera stream instead of a video file
+
+To get the input video from the camera, use the `-i CAM` command-line argument. Specify the resolution of the camera using the `-video_size` command line argument.
+
+For example:
+```
+python main.py -i CAM -m path-to-model.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3002/fac.ffm
+```
 
 
