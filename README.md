@@ -166,7 +166,7 @@ Parameter&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp
 
 The script outputs processed frames, so they can be pipelined to FFMPEG server. Output frames are of the same size as original ones, hence it is important to specify correct input resolution in the `-video_size` parameter of the ffmpeg command. For example, the following command can be used to perform inference on the input video 768x432 pixels in size:
 ```
-python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m models/ssdlite_mobilenet_v2_coco_custom_shape.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.3 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 2 -i - http://0.0.0.0:3002/fac.ffm
+python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m models/ssdlite_mobilenet_v2_coco_custom_shape.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.3 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 2 -i - http://0.0.0.0:3004/fac.ffm
 ```
 
 #### Running on the CPU
@@ -182,10 +182,10 @@ When running inference on the CPU, the CPU extension library is required. This c
 Though by default application runs on CPU, this can also be explicitly specified by ```-d CPU``` command-line argument:
 
 ```
-python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m path-to-model.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3002/fac.ffm
+python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m path-to-model.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3004/fac.ffm
 ```
 
-To see the output on a web based interface, open the link [http://0.0.0.0:3002](http://0.0.0.0:3002/) in a browser.
+To see the output on a web based interface, open the link [http://0.0.0.0:3004](http://0.0.0.0:3004/) in a browser.
 
 
 
@@ -194,10 +194,10 @@ To see the output on a web based interface, open the link [http://0.0.0.0:3002](
 To run on the Intel Neural Compute Stick, use the ```-d MYRIAD``` command-line argument:
 
 ```
-python main.py -d MYRIAD -i resources/Pedestrian_Detect_2_1_1.mp4 -m path-to-model.xml -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3002/fac.ffm
+python main.py -d MYRIAD -i resources/Pedestrian_Detect_2_1_1.mp4 -m path-to-model.xml -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3004/fac.ffm
 ```
 
-To see the output on a web based interface, open the link [http://0.0.0.0:3002](http://0.0.0.0:3002/) in a browser.
+To see the output on a web based interface, open the link [http://0.0.0.0:3004](http://0.0.0.0:3004/) in a browser.
 
 **Note:** The Intel Neural Compute Stick can only run FP16 models at this time. The model that is passed to the application, through the `-m <path_to_model>` command-line argument, must be of data type FP16.
 
@@ -208,7 +208,7 @@ To get the input video from the camera, use the `-i CAM` command-line argument. 
 
 For example:
 ```
-python main.py -i CAM -m path-to-model.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3002/fac.ffm
+python main.py -i CAM -m path-to-model.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3004/fac.ffm
 ```
 
 
