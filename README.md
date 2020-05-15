@@ -212,3 +212,6 @@ python main.py -i CAM -m path-to-model.xml -l /opt/intel/openvino/deployment_too
 ```
 
 
+## Credits 
+
+This project is based on the assignment from the [Intel Edge AI for IoT Developers](https://www.udacity.com/course/intel-edge-ai-for-iot-developers-nanodegree--nd131) program. 
