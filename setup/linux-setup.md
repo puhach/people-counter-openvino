@@ -15,6 +15,12 @@ sudo add-apt-repository -y -r ppa:chris-lea/node.js
 sudo rm -f /etc/apt/sources.list.d/chris-lea-node_js-*.list
 sudo rm -f /etc/apt/sources.list.d/chris-lea-node_js-*.list.save
 ```
+
+- If you don't have curl on your system, install it at first:
+```
+sudo apt install curl
+```
+
 - To install Nodejs and Npm, run the below commands:
 ```
 curl -sSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo apt-key add -
@@ -25,6 +31,7 @@ echo "deb-src https://deb.nodesource.com/$VERSION $DISTRO main" | sudo tee -a /e
 sudo apt-get update
 sudo apt-get install nodejs
 ```
+
 
 ### Install the following dependencies
 
