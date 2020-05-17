@@ -18,16 +18,17 @@ The counter exploits the Inference Engine included in the Intel Distribution of 
 
 * 6th to 10th generation Intel Core processor with Iris Pro graphics or Intel HD Graphics
 * Or Intel Neural Compute Stick 2 (NCS2)
+* 4GB RAM on a development machine
 
 ### Software
 
-*   Python 3.5
-*   Intel Distribution of OpenVINO toolkit 2019 R3 release
-*   Node v6.17.1
-*   Npm v3.10.10
-*   CMake
-*   FFmpeg
-*   MQTT Mosca server
+* Python 3.5
+* Intel Distribution of OpenVINO toolkit 2019 R3 release
+* Node v6.17.1
+* Npm v3.10.10
+* CMake
+* FFmpeg
+* MQTT Mosca server
   
 
 ## Setup
