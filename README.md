@@ -117,7 +117,7 @@ Mosca server started.
 
 ### Start the GUI
 
-Open a new terminal and run the below commands.
+Open a new terminal and run the below commands from the setup directory.
 ```
 cd webservice/ui
 npm run dev
