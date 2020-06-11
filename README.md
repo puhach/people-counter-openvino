@@ -146,47 +146,33 @@ source /opt/intel/openvino/bin/setupvars.sh -pyver 3.5
 You should also be able to run the application with Python 3.6, although newer versions of Python will not work with the app.
 
 
-### Usage
-
-Although reshaped SSD Lite model is pretty accurate, occasionally fails still occur. To solve that issue the volatility threshold is used to account for short misdetections. Unfortunately, there are a couple of places where the sequence of failures is rather long, therefore it is recommended to decrease the probability threshold for detections to 0.3 or increase the volatility threshold to a value around 20.
-
-All supported command line arguments are described below.
-
-Parameter&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Meaning 
------------- | ------ 
---model, -m | [Required] The path to an xml file with a trained model.
---input, -i | [Required] The path to an image or a video file. To get the input from the camera, use "CAM" as an argument.
---device, -d | [Optional] The target device to infer on: CPU, GPU, FPGA, or MYRIAD is acceptable. Defaults to CPU.
---cpu_extension, -l | [Optional] The absolute path to a shared library with MKLDNN kernel implementations.
---concurrency, -cy | [Optional] Specifies the number of asynchronous infer requests to perform at the same time. Default is 4.
---batch, -b | [Optional] Defines the frame batch size. Default is 1.
---volatility, -vt | [Optional] The maximal number of consecutive frames allowed to have a detection value different from the last stable one. Exceeding this limit results in their detection to be considered a new stable value. Default is 10.
---prob_threshold, -pt | [Optional] Probability threshold for detections filtering. Default is 0.3.
---crowd_alarm, -ca | [Optional] The number of people after which the warning message will be displayed. Default is 5.
---duration_alarm, -da | [Optional] The duration of stay (in seconds) after which the warning message will be displayed. Default is 15.
-
-The script outputs processed frames, so they can be pipelined to FFMPEG server. Output frames are of the same size as original ones, hence it is important to specify correct input resolution in the `-video_size` parameter of the ffmpeg command. For example, the following command can be used to perform inference on the input video 768x432 pixels in size:
-```
-python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m models/ssdlite_mobilenet_v2_coco_custom_shape.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.3 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 2 -i - http://0.0.0.0:3004/fac.ffm
-```
 
 #### Running on the CPU
 
-When running inference on the CPU, the CPU extension library is required. This can be found at: 
+By default the application runs on CPU, this can also be explicitly specified by ```-d CPU``` command-line argument:
+
+```
+python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m path-to-model.xml -d CPU -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3004/fac.ffm
+```
+
+To see the output on a web based interface, open the link [http://0.0.0.0:3000](http://0.0.0.0:3000/) in a browser.
+
+
+*In OpenVINO 2019 R3 the CPU extension library is required, when running inference on CPU*. It can be found at: 
 
 ```
 /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/
 ```
 
-*Depending on whether you are using Linux or Mac, the filename will be either `libcpu_extension_sse4.so` or `libcpu_extension.dylib`, respectively.* (The Linux filename may be different if you are using a AVX architecture)
+Depending on whether you are using Linux or Mac, the filename will be either `libcpu_extension_sse4.so` or `libcpu_extension.dylib`, respectively. The Linux filename may be different if you are using a AVX architecture.
 
-Though by default application runs on CPU, this can also be explicitly specified by ```-d CPU``` command-line argument:
-
+To specify the extension use the `-l` command line argument:
 ```
 python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m path-to-model.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3004/fac.ffm
 ```
 
-To see the output on a web based interface, open the link [http://0.0.0.0:3000](http://0.0.0.0:3000/) in a browser.
+
+*In OpenVINO 2020.1 release the CPU extensions library were moved into the plugin. The extensions are loaded automatically while loading the plugin.*
 
 
 
@@ -210,6 +196,30 @@ To get the input video from the camera, use the `-i CAM` command-line argument. 
 For example:
 ```
 python main.py -i CAM -m path-to-model.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.5 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3004/fac.ffm
+```
+
+### Additional Usage Details
+
+Although reshaped SSD Lite model is pretty accurate, occasionally fails still occur. To solve that issue the volatility threshold is used to account for short misdetections. Unfortunately, there are a couple of places where the sequence of failures is rather long, therefore it is recommended to decrease the probability threshold for detections to 0.3 or increase the volatility threshold to a value around 20.
+
+All supported command line arguments are described below.
+
+Parameter&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Meaning 
+------------ | ------ 
+--model, -m | [Required] The path to an xml file with a trained model.
+--input, -i | [Required] The path to an image or a video file. To get the input from the camera, use "CAM" as an argument.
+--device, -d | [Optional] The target device to infer on: CPU, GPU, FPGA, or MYRIAD is acceptable. Defaults to CPU.
+--cpu_extension, -l | [Optional] The absolute path to a shared library with MKLDNN kernel implementations.
+--concurrency, -cy | [Optional] Specifies the number of asynchronous infer requests to perform at the same time. Default is 4.
+--batch, -b | [Optional] Defines the frame batch size. Default is 1.
+--volatility, -vt | [Optional] The maximal number of consecutive frames allowed to have a detection value different from the last stable one. Exceeding this limit results in their detection to be considered a new stable value. Default is 10.
+--prob_threshold, -pt | [Optional] Probability threshold for detections filtering. Default is 0.3.
+--crowd_alarm, -ca | [Optional] The number of people after which the warning message will be displayed. Default is 5.
+--duration_alarm, -da | [Optional] The duration of stay (in seconds) after which the warning message will be displayed. Default is 15.
+
+The script outputs processed frames, so they can be pipelined to FFMPEG server. Output frames are of the same size as original ones, hence it is important to specify correct input resolution in the `-video_size` parameter of the ffmpeg command. For example, the following command can be used to perform inference on the input video 768x432 pixels in size:
+```
+python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m models/ssdlite_mobilenet_v2_coco_custom_shape.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.3 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 2 -i - http://0.0.0.0:3004/fac.ffm
 ```
 
 
